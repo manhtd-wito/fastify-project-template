@@ -1,0 +1,16 @@
+enum Status {
+  PENDING
+  ACTIVE
+  BANNED
+}
+
+model User {
+  id        Int           @id @default(autoincrement())
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @default(now())
+  email     String        @unique @database.VarChar(300)
+  name      String
+  status    Status
+  password  String        @database.Text
+  roles     RolesOnUsers[]
+}

@@ -1,0 +1,7 @@
+model RolesOnUsers {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
+  roleId Int  @unique
+  role   Role @relation(fields: [roleId], references: [id])
+}
