@@ -1,0 +1,61 @@
+services:
+  app:
+    container_name: app
+    build: .
+    env_file:
+      - .env
+    command: ['npm', 'run', 'dev']
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    ports:
+      - '3000:3000'
+    depends_on:
+      - 'mysql8'
+      - 'redis'
+    networks:
+      - app_network
+
+  redis:
+    image: redis:latest
+    container_name: app_redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis:/data
+    networks:
+      - app_network
+
+  mysql8:
+    container_name: app_db
+    image: mysql:8.0
+    env_file:
+      - .env
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./db/mysql_init:/docker-entrypoint-initdb.d
+      - ./db/mysql_data:/var/lib/mysql
+      - ./db/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - app_network
+
+  adminer:
+    container_name: app_adminer
+    image: adminer
+    environment:
+      ADMINER_DEFAULT_SERVER: app_db
+    ports:
+      - 8081:8080
+    networks:
+      - app_network
+
+#Volumes
+volumes:
+  redis:
+  node_modules:
+    driver: local
+
+networks:
+  app_network:
+    external: true

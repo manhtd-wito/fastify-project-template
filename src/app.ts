@@ -1,23 +1,50 @@
 import fastify, { FastifyInstance } from 'fastify'
-import userRoutes from './routes/userRoutes'
+import cors from '@fastify/cors'
 import dotenv from 'dotenv'
+import routes from './routes'
+import jwt from './jwt'
+import loggerConfig from './logger'
+import requestContext from '@fastify/request-context'
+import fastifyAuth from '@fastify/auth'
+import { cronJobs } from './cronjob'
+import { Server as HTTPServer } from 'http'
+import setupSocketConnection from './socket'
 
 dotenv.config()
 
 const app: FastifyInstance = fastify({
-  logger: { 
-    level: 'info', 
-    file: process.env.LOG_FILE  || './logs/app.log',
-  },
+  logger: loggerConfig,
 })
 
-app.register(userRoutes)
+// register cors
+app.register(cors, {
+  origin: process.env.ALLOWED_ORIGIN || '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+})
+
+// register context
+app.register(requestContext)
+
+// register jwt
+app.register(jwt)
+
+// register auth
+app.register(fastifyAuth)
+
+// register socket
+const httpServer: HTTPServer = app.server
+setupSocketConnection(httpServer)
 
 app.get('/', async () => {
   return {
     message: 'server online',
   }
 })
+
+app.register(routes, { prefix: '/api' })
+
+cronJobs()
 
 app.addHook('onError', async (request, reply, error) => {
   app.log.error(error)
